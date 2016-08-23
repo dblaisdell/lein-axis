@@ -1,19 +1,21 @@
 (ns leiningen.axis
   (:use [clojure.java.shell :only [sh]]
-	[clojure.string :only [join]]
 	[leiningen.classpath :only [get-classpath-string]]))
 
-(def ^:dynamic *WSDL2Java-class* "org.apache.axis.wsdl.WSDL2Java")
+(def WSDL2Java-class "org.apache.axis.wsdl.WSDL2Java")
 
 (defn- cmd
   "Convert the [wsdl target-package] vector from project.clj to a WSDL2Java call."
-  [p [wsdl package extra]]
-  (concat
-   ["java" "-cp" (join java.io.File/pathSeparatorChar (get-classpath-string p)) *WSDL2Java-class*
-    "-o" (get p :java-source-path "src/java")
-    "-p" package
-    wsdl]
-   extra))
+  [project [wsdl package extra]]
+  (let [c (concat
+           ["java" "-cp" (get-classpath-string project) WSDL2Java-class
+            "-o" (or (first (get project :java-source-paths))
+                     "src/java")
+            "-p" package
+            wsdl]
+           extra)]
+    (println c)
+    c))
 
 (defn axis
   "Use Apache Axis to generate Java classes for WSDL files.
@@ -39,6 +41,8 @@ don't provide this value.
 "
   [project]
   (doseq [cmd-out (map (comp (partial apply sh)
-			     (partial cmd project))
-		       (:axis project))]
-    (print (str (:err cmd-out)))))
+        		     (partial cmd project))
+        	       (:axis project))]
+    (print (str (:err cmd-out))))
+
+  )
